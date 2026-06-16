@@ -1,0 +1,11 @@
+# Hermes Agent Integration Example
+# Add this to your Hermes config.yaml
+
+mcp:
+  servers:
+    - name: openpulse
+      command: python
+      args: ["-m", "openpulse.mcp_server"]
+      env:
+        OPENPULSE_DB_PATH: "~/.openpulse/openpulse.db"
+        # OPENPULSE_DATABASE_URL: "postgresql://user:pass@localhost/openpulse"

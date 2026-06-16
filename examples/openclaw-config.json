@@ -1,0 +1,14 @@
+{
+  "mcp": {
+    "servers": [
+      {
+        "name": "openpulse",
+        "command": "python",
+        "args": ["-m", "openpulse.mcp_server"],
+        "env": {
+          "OPENPULSE_DB_PATH": "~/.openpulse/openpulse.db"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,30 @@
+# OpenPulse Configuration Example
+# Copy to ~/.openpulse/config.yaml or set OPENPULSE_CONFIG_PATH
+
+# Database
+# SQLite (default, lightweight):
+database_url: "sqlite:///~/.openpulse/openpulse.db"
+# PostgreSQL (server mode):
+# database_url: "postgresql://user:password@localhost:5432/openpulse"
+
+# API Server
+host: "127.0.0.1"
+port: 8000
+
+# RSSHub instance
+# Use self-hosted RSSHub for best reliability
+rsshub_base_url: "http://localhost:1200"
+
+# API Keys (optional)
+# newsapi_key: "your-newsapi-key"
+# youtube_api_key: "your-youtube-api-key"
+
+# Scheduler
+scheduler_enabled: true
+scheduler_max_instances: 3
+
+# Logging
+log_level: "INFO"
+
+# Data directory
+# data_dir: "~/.openpulse"

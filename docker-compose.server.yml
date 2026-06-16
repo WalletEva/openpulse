@@ -1,0 +1,61 @@
+# OpenPulse - Docker Compose (Server/Production)
+# Full stack with PostgreSQL and RSSHub
+# Usage: docker compose -f docker-compose.server.yml up -d
+
+services:
+  openpulse:
+    build: .
+    container_name: openpulse-server
+    ports:
+      - "8000:8000"
+    volumes:
+      - openpulse_data:/data
+      - ./config:/config
+    environment:
+      - OPENPULSE_DATABASE_URL=postgresql://openpulse:openpulse_pass@postgres:5432/openpulse
+      - OPENPULSE_RSSHUB_BASE_URL=http://rsshub:1200
+      - OPENPULSE_LOG_LEVEL=INFO
+      - OPENPULSE_SCHEDULER_ENABLED=true
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rsshub:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: openpulse-db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: openpulse
+      POSTGRES_USER: openpulse
+      POSTGRES_PASSWORD: openpulse_pass
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U openpulse"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rsshub:
+    image: diygod/rsshub
+    container_name: openpulse-rsshub
+    ports:
+      - "1200:1200"
+    environment:
+      NODE_ENV: production
+      # Optional: configure RSSHub settings
+      # CACHE_TYPE: redis
+      # REDIS_URL: redis://redis:6379/
+    restart: unless-stopped
+
+volumes:
+  openpulse_data:
+  pgdata:
