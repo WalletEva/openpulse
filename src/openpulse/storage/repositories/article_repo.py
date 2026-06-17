@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 
 from sqlalchemy import func, select
@@ -140,7 +140,7 @@ class ArticleRepository:
         This is a simple tag frequency analysis.
         A more sophisticated implementation would use NLP.
         """
-        since = datetime.utcnow() - __import__("datetime").timedelta(hours=hours)
+        since = datetime.utcnow() - timedelta(hours=hours)
         stmt = select(Article).where(Article.collected_at >= since)
 
         if language and language != "auto":
@@ -164,7 +164,7 @@ class ArticleRepository:
 
     def delete_old(self, days: int = 30) -> int:
         """Delete articles older than specified days. Returns count of deleted articles."""
-        cutoff = datetime.utcnow() - __import__("datetime").timedelta(days=days)
+        cutoff = datetime.utcnow() - timedelta(days=days)
         stmt = select(Article).where(Article.collected_at < cutoff)
         old_articles = list(self.session.scalars(stmt).all())
         count = len(old_articles)

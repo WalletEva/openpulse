@@ -146,15 +146,23 @@ class SchedulerEngine:
             result = await collector.collect(source_config)
 
             if result.success:
+                from openpulse.collector.converter import pydantic_list_to_orm
+                orm_articles = pydantic_list_to_orm(result.articles)
+
                 session = get_session()
-                repo = ArticleRepository(session)
-                new_articles = repo.add_many(result.articles)
-                session.commit()
-                session.close()
-                logger.info(
-                    f"Collection completed: {result.source} - "
-                    f"{result.count} articles ({len(new_articles)} new)"
-                )
+                try:
+                    repo = ArticleRepository(session)
+                    new_articles = repo.add_many(orm_articles)
+                    session.commit()
+                    logger.info(
+                        f"Collection completed: {result.source} - "
+                        f"{result.count} articles ({len(new_articles)} new)"
+                    )
+                except Exception as e:
+                    session.rollback()
+                    logger.error(f"Collection save failed: {result.source} - {e}")
+                finally:
+                    session.close()
             else:
                 logger.error(f"Collection failed: {result.source} - {result.error}")
 

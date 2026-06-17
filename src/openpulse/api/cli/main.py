@@ -110,22 +110,25 @@ def collect(
             }
         elif source:
             # Try to look up source from database
-            session = get_session()
             from openpulse.storage.repositories.source_repo import SourceRepository
-            repo = SourceRepository(session)
-            src = repo.get_by_name(source)
-            if not src:
-                console.print(f"[red]Source '{source}' not found. Add it first with 'openpulse source add'[/red]")
-                raise typer.Exit(1)
-            source_config = src.config or {}
-            source_config["source_name"] = src.name
-            source_config["limit"] = limit
+            session = get_session()
+            try:
+                repo = SourceRepository(session)
+                src = repo.get_by_name(source)
+                if not src:
+                    console.print(f"[red]Source '{source}' not found. Add it first with 'openpulse source add'[/red]")
+                    raise typer.Exit(1)
+                source_config = dict(src.config or {})
+                source_config["source_name"] = src.name
+                source_config["limit"] = limit
+                adapter_name = src.adapter
+            finally:
+                session.close()
 
-            if src.adapter == "rsshub":
+            if adapter_name == "rsshub":
                 collector = RSSHubCollector()
             else:
                 collector = CustomRSSCollector()
-            session.close()
         else:
             console.print("[red]Please specify --source, --route, or --url[/red]")
             raise typer.Exit(1)
@@ -137,12 +140,17 @@ def collect(
             console.print(f"[red]Collection failed: {result.error}[/red]")
             raise typer.Exit(1)
 
-        # Save to database
+        # Convert Pydantic articles to SQLAlchemy ORM articles and save
+        from openpulse.collector.converter import pydantic_list_to_orm
+        orm_articles = pydantic_list_to_orm(result.articles)
+
         session = get_session()
-        article_repo = ArticleRepository(session)
-        new_articles = article_repo.add_many(result.articles)
-        session.commit()
-        session.close()
+        try:
+            article_repo = ArticleRepository(session)
+            new_articles = article_repo.add_many(orm_articles)
+            session.commit()
+        finally:
+            session.close()
 
         console.print(f"[green]Collected {result.count} articles ({len(new_articles)} new)[/green]")
         for article in new_articles[:10]:
@@ -318,15 +326,14 @@ def source_cmd(
         if url:
             config["url"] = url
 
-        src = repo.add(
-            __import__("openpulse.storage.models", fromlist=["Source"]).Source(
-                name=name,
-                source_type=source_type or "rss",
-                adapter=adapter or "custom_rss",
-                config=config,
-                category=category or "",
-            )
-        )
+        from openpulse.storage.models import Source
+        src = repo.add(Source(
+            name=name,
+            source_type=source_type or "rss",
+            adapter=adapter or "custom_rss",
+            config=config,
+            category=category or "",
+        ))
         session.commit()
         console.print(f"[green]Source '{name}' added (ID: {src.id})[/green]")
 

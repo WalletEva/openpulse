@@ -121,11 +121,16 @@ def collect_now(
         if not result.success:
             return {"error": result.error}
 
+        from openpulse.collector.converter import pydantic_list_to_orm
+        orm_articles = pydantic_list_to_orm(result.articles)
+
         session = get_session()
-        article_repo = ArticleRepository(session)
-        new_articles = article_repo.add_many(result.articles)
-        session.commit()
-        session.close()
+        try:
+            article_repo = ArticleRepository(session)
+            new_articles = article_repo.add_many(orm_articles)
+            session.commit()
+        finally:
+            session.close()
 
         return {
             "source": result.source,
