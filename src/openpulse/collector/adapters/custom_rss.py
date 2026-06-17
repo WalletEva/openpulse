@@ -49,7 +49,7 @@ class CustomRSSCollector(BaseCollector):
         source_name = source_config.get("source_name", feed_url)
 
         try:
-            async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
+            async with httpx.AsyncClient(timeout=15.0, follow_redirects=True) as client:
                 response = await client.get(feed_url)
                 response.raise_for_status()
 

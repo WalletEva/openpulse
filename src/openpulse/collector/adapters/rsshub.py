@@ -64,7 +64,7 @@ class RSSHubCollector(BaseCollector):
         url = self._build_url(route, base_url)
 
         try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
+            async with httpx.AsyncClient(timeout=15.0) as client:
                 response = await client.get(url)
                 response.raise_for_status()
 
